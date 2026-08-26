@@ -1,523 +1,331 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Учет проблемных договоров — Исламский росточек</title>
-<style>
-:root {
---primary: #1b4332;
---primary-light: #2d6a4f;
---accent: #52b788;
---bg: #f4f6f4;
---card-bg: #ffffff;
---text: #212529;
---text-muted: #6c757d;
---danger: #e63946;
---warning: #f4a261;
---success: #2a9d8f;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Учет проблемных договоров — Исламский росточек</title>
+  <style>
+    :root {
+      --primary: #1b4332;
+      --primary-light: #2d6a4f;
+      --accent: #52b788;
+      --bg: #f4f6f4;
+      --card-bg: #ffffff;
+      --text: #212529;
+      --text-muted: #6c757d;
+      --danger: #e63946;
+      --warning: #faa261;
+      --success: #2a9d8f;
+    }
 
-* {
-box-sizing: border-box;
-margin: 0;
-padding: 0;
-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 15px; }
+    .container { max-width: 1000px; margin: 0 auto; }
 
-body {
-background-color: var(--bg);
-color: var(--text);
-padding: 20px;
-}
+    /* Шапка */
+    .header {
+      background: var(--primary);
+      color: white;
+      padding: 20px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+    .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+    .header p { font-size: 0.85rem; opacity: 0.8; }
+    
+    .btn {
+      background: var(--accent);
+      color: var(--primary);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.9; }
 
-.container {
-max-width: 1400px;
-margin: 0 auto;
-}
+    /* Табы */
+    .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
 
-header {
-background: var(--primary);
-color: white;
-padding: 20px 30px;
-border-radius: 12px;
-margin-bottom: 25px;
-display: flex;
-justify-content: space-between;
-align-items: center;
-box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-}
+    /* Фильтры */
+    .filters {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .input-field, .select-field {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      outline: none;
+    }
 
-header h1 {
-font-size: 24px;
-margin-bottom: 5px;
-}
+    /* Таблица */
+    .table-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+    th, td { padding: 12px 15px; border-bottom: 1px solid #eee; }
+    th { background: #f8f9fa; color: var(--text-muted); font-weight: 600; }
 
-header p {
-font-size: 14px;
-opacity: 0.8;
-}
+    /* Статусы */
+    .badge {
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: bold;
+      display: inline-block;
+    }
+    .badge- уважительная { background: #e3f2fd; color: #0d47a1; }
+    .badge- наглый { background: #ffebee; color: #c62828; }
+    .badge- неорганизованный { background: #fff3e0; color: #ef6c00; }
 
-/* Навигация по вкладкам (листы) */
-.tabs {
-display: flex;
-gap: 10px;
-margin-bottom: 20px;
-}
-
-.tab-btn {
-background: #e2e8e4;
-border: none;
-padding: 12px 25px;
-font-size: 15px;
-font-weight: 600;
-border-radius: 8px;
-cursor: pointer;
-transition: all 0.3s ease;
-color: var(--text);
-}
-
-.tab-btn.active {
-background: var(--primary);
-color: white;
-box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Панель управления (добавление, поиск) */
-.control-panel {
-background: var(--card-bg);
-padding: 20px;
-border-radius: 12px;
-margin-bottom: 20px;
-display: flex;
-flex-wrap: wrap;
-gap: 15px;
-align-items: center;
-justify-content: space-between;
-box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.search-box, .filter-box {
-padding: 10px 15px;
-border: 1px solid #ced4da;
-border-radius: 6px;
-font-size: 14px;
-outline: none;
-width: 250px;
-}
-
-.btn {
-background: var(--primary-light);
-color: white;
-border: none;
-padding: 10px 20px;
-border-radius: 6px;
-cursor: pointer;
-font-weight: 600;
-transition: background 0.2s;
-}
-
-.btn:hover {
-background: var(--primary);
-}
-
-.btn-danger {
-background: var(--danger);
-}
-.btn-danger:hover {
-background: #c1121f;
-}
-
-/* Таблицы */
-.table-container {
-background: var(--card-bg);
-border-radius: 12px;
-overflow-x: auto;
-box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-display: none;
-}
-
-.table-container.active {
-display: block;
-}
-
-table {
-width: 100%;
-border-collapse: collapse;
-text-align: left;
-font-size: 14px;
-}
-
-th, td {
-padding: 14px 16px;
-border-bottom: 1px solid #e9ecef;
-}
-
-th {
-background-color: #f8f9fa;
-color: var(--primary);
-font-weight: 700;
-}
-
-tr:hover {
-background-color: #fcfdfc;
-}
-
-/* Бейджи статусов и типов */
-.badge {
-padding: 5px 10px;
-border-radius: 20px;
-font-size: 12px;
-font-weight: 600;
-display: inline-block;
-}
-
-.badge-hardship { background: #ffe8d6; color: #b75d14; }
-.badge-evasive { background: #f8d7da; color: #842029; }
-.badge-forgetful { background: #e2eafc; color: #1d4ed8; }
-
-.badge-working { background: #e9ecef; color: #495057; }
-.badge-promised { background: #d8f3dc; color: #1b4332; }
-.badge-broken { background: #fde2e4; color: #d90429; }
-.badge-closed { background: #d1e7dd; color: #0f5132; }
-
-/* Модальное окно */
-.modal {
-display: none;
-position: fixed;
-top: 0; left: 0; width: 100%; height: 100%;
-background: rgba(0,0,0,0.5);
-justify-content: center;
-align-items: center;
-z-index: 1000;
-}
-
-.modal-content {
-background: white;
-padding: 30px;
-border-radius: 12px;
-width: 100%;
-max-width: 500px;
-box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.modal-content h2 {
-margin-bottom: 20px;
-color: var(--primary);
-}
-
-.form-group {
-margin-bottom: 15px;
-}
-
-.form-group label {
-display: block;
-margin-bottom: 5px;
-font-weight: 600;
-font-size: 13px;
-}
-
-.form-group input, .form-group select, .form-group textarea {
-width: 100%;
-padding: 10px;
-border: 1px solid #ced4da;
-border-radius: 6px;
-font-size: 14px;
-}
-
-.modal-actions {
-display: flex;
-justify-content: flex-end;
-gap: 10px;
-margin-top: 20px;
-}
-
-.comment-history {
-font-size: 12px;
-color: var(--text-muted);
-margin-top: 4px;
-white-space: pre-line;
-max-width: 250px;
-}
-</style>
+    /* Модальное окно */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+    }
+    .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+    .btn-secondary { background: #ccc; color: #333; }
+  </style>
 </head>
 <body>
 
 <div class="container">
-<header>
-<div>
-<h1>Учет проблемных договоров</h1>
-<p>Система контроля для совместной работы (Исламский росточек)</p>
-</div>
-<button class="btn" onclick="openModal()">+ Добавить проблемный договор</button>
-</header>
+  <div class="header">
+    <div>
+      <h1>Учет проблемных договоров</h1>
+      <p>Система контроля работы (Исламский росточек)</p>
+    </div>
+    <button class="btn" id="openModalBtn">+ Добавить проблемный договор</button>
+  </div>
 
-<!-- Переключение листов -->
-<div class="tabs">
-<button class="tab-btn active" onclick="switchTab('active', event)">Активные проблемные (<span id="activeCount">0</span>)</button>
-<button class="tab-btn" onclick="switchTab('closed', event)">Закрытые / Урегулированные (<span id="closedCount">0</span>)</button>
-</div>
+  <div class="tabs">
+    <button class="tab-btn active" id="tabActive">Активные проблемные (<span id="countActive">0</span>)</button>
+    <button class="tab-btn" id="tabClosed">Закрытые / Урегулированные (<span id="countClosed">0</span>)</button>
+  </div>
 
-<!-- Панель управления -->
-<div class="control-panel">
-<input type="text" id="searchInput" class="search-box" placeholder="Поиск по ФИО или договору..." oninput="renderTables()">
-<select id="filterType" class="filter-box" onchange="renderTables()">
-<option value="">Все типы клиентов</option>
-<option value="Затруднение">Затруднение (уважительная)</option>
-<option value="Уклоняется">Уклоняется / Наглый</option>
-<option value="Забыл">Забыл / Неорганизованный</option>
-</select>
-</div>
+  <div class="filters">
+    <input type="text" id="searchInput" class="input-field" placeholder="Поиск по ФИО или договору...">
+    <select id="filterType" class="select-field">
+      <option value="all">Все типы клиентов</option>
+      <option value="уважительная">Затруднение (уважительная)</option>
+      <option value="наглый">Уклоняется / Наглый</option>
+      <option value="неорганизованный">Забыл / Неорганизованный</option>
+    </select>
+  </div>
 
-<!-- Лист 1: Активные проблемные -->
-<div id="tab-active" class="table-container active">
-<table>
-<thead>
-<tr>
-<th>№ / Договор</th>
-<th>Клиент & Контакты</th>
-<th>Сумма долга</th>
-<th>Тип клиента</th>
-<th>Ответственный</th>
-<th>Процесс / Договоренность</th>
-<th>Контроль / Дата</th>
-<th>Статус</th>
-<th>Действия</th>
-</tr>
-</thead>
-<tbody id="activeTableBody">
-<!-- Данные подгружаются через JavaScript -->
-</tbody>
-</table>
-</div>
-
-<!-- Лист 2: Закрытые -->
-<div id="tab-closed" class="table-container">
-<table>
-<thead>
-<tr>
-<th>№ / Договор</th>
-<th>Клиент & Контакты</th>
-<th>Сумма</th>
-<th>Тип клиента</th>
-<th>Кто закрыл</th>
-<th>Итоговый комментарий</th>
-<th>Действия</th>
-</tr>
-</thead>
-<tbody id="closedTableBody">
-<!-- Архитектура закрытых договоров -->
-</tbody>
-</table>
-</div>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>№ / Договор</th>
+          <th>Клиент & Контакты</th>
+          <th>Сумма долга</th>
+          <th>Тип клиента</th>
+          <th>Действие</th>
+        </tr>
+      </thead>
+      <tbody id="contractsTableBody">
+        <!-- Данные подгружаются через JavaScript -->
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <!-- Модальное окно добавления -->
-<div id="clientModal" class="modal">
-<div class="modal-content">
-<h2>Новый проблемный договор</h2>
-<form id="clientForm" onsubmit="saveClient(event)">
-<div class="form-group">
-<label>№ Договора / ID</label>
-<input type="text" id="contractId" required placeholder="Например: Д-104">
-</div>
-<div class="form-group">
-<label>ФИО Клиента</label>
-<input type="text" id="clientName" required placeholder="Имя Фамилия">
-</div>
-<div class="form-group">
-<label>Контакты (Телефон / Мессенджер)</label>
-<input type="text" id="clientPhone" required placeholder="+7 (...)...-..-..">
-</div>
-<div class="form-group">
-<label>Сумма задолженности</label>
-<input type="text" id="clientDebt" required placeholder="Например: 45 000 руб.">
-</div>
-<div class="form-group">
-<label>Тип / Характер клиента</label>
-<select id="clientType">
-<option value="Затруднение">Затруднение (уважительная причина)</option>
-<option value="Уклоняется">Уклоняется / Наглый</option>
-<option value="Забыл">Забыл / Неорганизованный</option>
-</select>
-</div>
-<div class="form-group">
-<label>Ответственный (Кто заносит)</label>
-<input type="text" id="responsibleUser" required placeholder="Ваше имя или имя работника">
-</div>
-<div class="form-group">
-<label>Суть договоренности / Первичный процесс</label>
-<textarea id="clientNote" rows="3" placeholder="Что ответил клиент, когда обещал отдать..."></textarea>
-</div>
-<div class="form-group">
-<label>Дата следующего контроля</label>
-<input type="date" id="nextDate" required>
-</div>
-<div class="modal-actions">
-<button type="button" class="btn" style="background: #6c757d;" onclick="closeModal()">Отмена</button>
-<button type="submit" class="btn">Сохранить</button>
-</div>
-</form>
-</div>
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header">Новый проблемный договор</div>
+    <form id="addContractForm">
+      <div class="form-group">
+        <label>№ Договора</label>
+        <input type="text" id="docNum" class="input-field" required>
+      </div>
+      <div class="form-group">
+        <label>ФИО Клиента</label>
+        <input type="text" id="clientName" class="input-field" required>
+      </div>
+      <div class="form-group">
+        <label>Телефон</label>
+        <input type="text" id="clientPhone" class="input-field" required>
+      </div>
+      <div class="form-group">
+        <label>Сумма долга (руб.)</label>
+        <input type="number" id="debtAmount" class="input-field" required>
+      </div>
+      <div class="form-group">
+        <label>Тип клиента</label>
+        <select id="clientType" class="select-field">
+          <option value="уважительная">Затруднение (уважительная)</option>
+          <option value="наглый">Уклоняется / Наглый</option>
+          <option value="неорганизованный">Забыл / Неорганизованный</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-secondary" id="closeModalBtn">Отмена</button>
+        <button type="submit" class="btn">Сохранить</button>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script>
-// База данных (хранится в памяти браузера, общая для вас и сотрудника на этом устройстве/хостинге)
-let clientsData = JSON.parse(localStorage.getItem('islamic_rostok_clients')) || [
-{
-id: "Д-101",
-name: "Алексей С.",
-phone: "+7 999 111-22-33",
-debt: "32 000 руб.",
-type: "Затруднение",
-responsible: "Али (Руководитель)",
-note: "[24.08 - Али]: Временные трудности с работой. Обещал внести часть 5-го числа.",
-date: "2026-09-05",
-status: "Обещал оплатить",
-isClosed: false
-},
-{
-id: "Д-108",
-name: "Марат К.",
-phone: "+7 928 444-55-66",
-debt: "15 500 руб.",
-type: "Уклоняется",
-responsible: "Марат (Работник)",
-note: "[25.08 - Марат]: Трубку сбрасывает, переносит сроки без причин.",
-date: "2026-08-27",
-status: "Нарушил обещание",
-isClosed: false
-}
-];
+  // Локальная база данных (хранится в браузере)
+  let contracts = JSON.parse(localStorage.getItem('contracts')) || [
+    { id: 1, doc: 'Д-101', name: 'Иванов И.И.', phone: '+7 999 000-00-01', amount: 15000, type: 'уважительная', status: 'active' },
+    { id: 2, doc: 'Д-102', name: 'Петров П.П.', phone: '+7 999 000-00-02', amount: 45000, type: 'наглый', status: 'active' }
+  ];
 
-function saveData() {
-localStorage.setItem('islamic_rostok_clients', JSON.stringify(clientsData));
-renderTables();
-}
+  let currentTab = 'active';
 
-function switchTab(tabName, event) {
-document.querySelectorAll('.table-container').forEach(el => el.classList.remove('active'));
-document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  // Элементы DOM
+  const tableBody = document.getElementById('contractsTableBody');
+  const modal = document.getElementById('modal');
+  const openModalBtn = document.getElementById('openModalBtn');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  const form = document.getElementById('addContractForm');
+  const tabActive = document.getElementById('tabActive');
+  const tabClosed = document.getElementById('tabClosed');
+  const searchInput = document.getElementById('searchInput');
+  const filterType = document.getElementById('filterType');
 
-document.getElementById('tab-' + tabName).classList.add('active');
-event.currentTarget.classList.add('active');
-}
+  // Сохранение в LocalStorage
+  function saveData() {
+    localStorage.setItem('contracts', JSON.stringify(contracts));
+    render();
+  }
 
-function openModal() {
-document.getElementById('clientModal').style.display = 'flex';
-document.getElementById('nextDate').valueAsDate = new Date();
-}
+  // Переключение статуса договора (Закрыть / Восстановить)
+  window.toggleStatus = function(id) {
+    contracts = contracts.map(item => {
+      if (item.id === id) {
+        item.status = item.status === 'active' ? 'closed' : 'active';
+      }
+      return item;
+    });
+    saveData();
+  };
 
-function closeModal() {
-document.getElementById('clientModal').style.display = 'none';
-document.getElementById('clientForm').reset();
-}
+  // Отрисовка таблицы
+  function render() {
+    const search = searchInput.value.toLowerCase();
+    const typeFilter = filterType.value;
 
-function saveClient(event) {
-event.preventDefault();
-const newClient = {
-id: document.getElementById('contractId').value,
-name: document.getElementById('clientName').value,
-phone: document.getElementById('clientPhone').value,
-debt: document.getElementById('clientDebt').value,
-type: document.getElementById('clientType').value,
-responsible: document.getElementById('responsibleUser').value,
-note: [${new Date().toLocaleDateString()} - ${document.getElementById('responsibleUser').value}]: ${document.getElementById('clientNote').value}`,
-date: document.getElementById('nextDate').value,
-status: "В работе",
-isClosed: false
-};
+    const filtered = contracts.filter(item => {
+      const matchesTab = item.status === currentTab;
+      const matchesSearch = item.name.toLowerCase().includes(search) || item.doc.toLowerCase().includes(search);
+      const matchesType = typeFilter === 'all' || item.type === typeFilter;
+      return matchesTab && matchesSearch && matchesType;
+    });
 
-clientsData.push(newClient);
-saveData();
-closeModal();
-}
+    // Обновление счетчиков
+    document.getElementById('countActive').innerText = contracts.filter(c => c.status === 'active').length;
+    document.getElementById('countClosed').innerText = contracts.filter(c => c.status === 'closed').length;
 
-function updateStatus(index, newStatus) {
-clientsData[index].status = newStatus;
-saveData();
-}
+    tableBody.innerHTML = '';
+    if (filtered.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Записи не найдены</td></tr>';
+      return;
+    }
 
-function addComment(index) {
-const comment = prompt("Введите свежую информацию по диалогу с клиентом:");
-const author = prompt("Ваше имя (кто звонил — вы или работник):");
-if (comment && author) {
-const today = new Date().toLocaleDateString();
-clientsData[index].note = [${today} - {comment}\n` + clientsData[index].note;
-clientsData[index].responsible = author;
-saveData();
-}
-}
+    filtered.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${item.doc}</strong></td>
+        <td>${item.name}<br><small style="color:var(--text-muted);">${item.phone}</small></td>
+        <td><strong>${Number(item.amount).toLocaleString('ru-RU')} ₽</strong></td>
+        <td><span class="badge badge-${item.type}">${item.type}</span></td>
+        <td>
+          <button class="btn" style="padding: 4px 8px; font-size:0.75rem;" onclick="toggleStatus(${item.id})">
+            ${item.status === 'active' ? 'Закрыть' : 'Восстановить'}
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  }
 
-function toggleClose(index) {
-clientsData[index].isClosed = !clientsData[index].isClosed;
-clientsData[index].status = clientsData[index].isClosed ? "Закрыт" : "В работе";
-saveData();
-}
+  // Управление модальным окном
+  openModalBtn.onclick = () => modal.classList.add('active');
+  closeModalBtn.onclick = () => modal.classList.remove('active');
 
-function deleteClient(index) {
-if (confirm("Точно удалить запись?")) {
-clientsData.splice(index, 1);
-saveData();
-}
-}
+  // Добавление договора
+  form.onsubmit = (e) => {
+    e.preventDefault();
+    const newContract = {
+      id: Date.now(),
+      doc: document.getElementById('docNum').value,
+      name: document.getElementById('clientName').value,
+      phone: document.getElementById('clientPhone').value,
+      amount: document.getElementById('debtAmount').value,
+      type: document.getElementById('clientType').value,
+      status: 'active'
+    };
+    contracts.push(newContract);
+    saveData();
+    form.reset();
+    modal.classList.remove('active');
+  };
 
-function renderTables() {
-const activeTbody = document.getElementById('activeTableBody');
-const closedTbody = document.getElementById('closedTableBody');
+  // Переключение табов
+  tabActive.onclick = () => {
+    tabActive.classList.add('active');
+    tabClosed.classList.remove('active');
+    currentTab = 'active';
+    render();
+  };
 
-const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-const filterType = document.getElementById('filterType').value;
+  tabClosed.onclick = () => {
+    tabClosed.classList.add('active');
+    tabActive.classList.remove('active');
+    currentTab = 'closed';
+    render();
+  };
 
-activeTbody.innerHTML = '';
-closedTbody.innerHTML = '';
+  // События поиска и фильтрации
+  searchInput.oninput = render;
+  filterType.onchange = render;
 
-let activeCount = 0;
-let closedCount = 0;
-
-clientsData.forEach((client, index) => {
-// Фильтрация
-const matchesSearch = client.name.toLowerCase().includes(searchQuery) || client.id.toLowerCase().includes(searchQuery);
-const matchesType = !filterType || client.type === filterType;
-
-if (client.isClosed) {
-closedCount++;
-if (matchesSearch) {
-closedTbody.innerHTML += &lt;tr&gt; &lt;td&gt;&lt;strong&gt;${client.id}</strong></td>
-<td>${client.name}&lt;br&gt;&lt;small style="color:#6c757d"&gt;${client.phone}</small></td>
-<td>${client.debt}&lt;/td&gt; &lt;td&gt;&lt;span class="badge ${getTypeClass(client.type)}">${client.type}&lt;/span&gt;&lt;/td&gt; &lt;td&gt;${client.responsible}</td>
-<td><div class="comment-history">${client.note}&lt;/div&gt;&lt;/td&gt; &lt;td&gt; &lt;button class="btn" style="padding: 6px 12px; font-size:12px;" onclick="toggleClose(${index})">Вернуть в активные</button>
-</td>
-</tr>
-; } } else { activeCount++; if (matchesSearch && matchesType) { activeTbody.innerHTML +=
-<tr>
-<td><strong>${client.id}&lt;/strong&gt;&lt;/td&gt; &lt;td&gt;${client.name}<br><small style="color:#6c757d">${client.phone}&lt;/small&gt;&lt;/td&gt; &lt;td&gt;&lt;strong&gt;${client.debt}</strong></td>
-<td><span class="badge ${getTypeClass(client.type)}"&gt;${client.type}</span></td>
-<td>${client.responsible}&lt;/td&gt; &lt;td&gt; &lt;div class="comment-history"&gt;${client.note}</div>
-<button class="btn" style="padding: 4px 8px; font-size: 11px; margin-top: 5px;" onclick="addComment(${index})"&gt;+ Добавить комментарий&lt;/button&gt; &lt;/td&gt; &lt;td&gt;${client.date}</td>
-<td>
-<select onchange="updateStatus(${index}, this.value)" style="padding: 5px; border-radius: 4px; font-size: 12px;"&gt; &lt;option value="В работе" ${client.status === 'В работе' ? 'selected' : ''}>В работе</option>
-<option value="Обещал оплатить" ${client.status === 'Обещал оплатить' ? 'selected' : ''}&gt;Обещал оплатить&lt;/option&gt; &lt;option value="Нарушил обещание" ${client.status === 'Нарушил обещание' ? 'selected' : ''}>Нарушил обещание</option>
-</select>
-</td>
-<td>
-<button class="btn" style="background: var(--success); padding: 6px 12px; font-size:12px; margin-bottom: 4px;" onclick="toggleClose(${index})"&gt;✔ Закрыть&lt;/button&gt;&lt;br&gt; &lt;button class="btn btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="deleteClient(${index})"&gt;Удалить&lt;/button&gt; &lt;/td&gt; &lt;/tr&gt;;
-}
-}
-});
-
-document.getElementById('activeCount').innerText = activeCount;
-document.getElementById('closedCount').innerText = closedCount;
-}
-
-function getTypeClass(type) {
-if (type === 'Затруднение') return 'badge-hardship';
-if (type === 'Уклоняется') return 'badge-evasive';
-return 'badge-forgetful';
-}
-
-// Первичный запуск отображения
-renderTables();
+  // Инициализация
+  render();
 </script>
 
 </body>
