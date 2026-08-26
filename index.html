@@ -16,11 +16,12 @@
       --danger: #e63946;
       --warning: #faa261;
       --success: #2a9d8f;
+      --whatsapp: #25D366; /* Цвет WhatsApp */
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: var(--bg); color: var(--text); padding: 15px; }
-    .container { max-width: 1000px; margin: 0 auto; }
+    .container { max-width: 1400px; margin: 0 auto; }
 
     /* Шапка */
     .header {
@@ -35,7 +36,7 @@
       flex-wrap: wrap;
       gap: 15px;
     }
-    .header h1 { font-size: 1.5rem; margin-bottom: 5px; }
+    .header h1 { font-size: 1.5rem; }
     .header p { font-size: 0.85rem; opacity: 0.8; }
     
     .btn {
@@ -49,8 +50,20 @@
       transition: opacity 0.2s;
     }
     .btn:hover { opacity: 0.9; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-whatsapp { 
+      background: var(--whatsapp); 
+      color: white; 
+      padding: 4px 8px; 
+      font-size: 0.75rem;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 4px;
+    }
 
-    /* Табы */
+    /* Табы (Листы) */
     .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .tab-btn {
       flex: 1;
@@ -71,11 +84,11 @@
     /* Фильтры */
     .filters {
       display: grid;
-      grid-template-columns: 2fr 1fr;
+      grid-template-columns: 2fr 1fr 1fr;
       gap: 10px;
       margin-bottom: 15px;
     }
-    .input-field, .select-field {
+    .input-field, .select-field, textarea {
       width: 100%;
       padding: 10px;
       border: 1px solid #ccc;
@@ -85,11 +98,14 @@
 
     /* Таблица */
     .table-container { background: white; border-radius: 8px; overflow-x: auto; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
-    th, td { padding: 12px 15px; border-bottom: 1px solid #eee; }
-    th { background: #f8f9fa; color: var(--text-muted); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
+    th, td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+    th { background: #f8f9fa; color: var(--text-muted); font-weight: 600; white-space: nowrap; }
 
-    /* Статусы */
+    /* Подсветка контроля сроков */
+    tr.overdue { background-color: #ffe6e6; } /* Красный — просрочено */
+    tr.today { background-color: #fff9db; }   /* Желтый — сегодня/завтра */
+
     .badge {
       padding: 4px 8px;
       border-radius: 6px;
@@ -97,9 +113,19 @@
       font-weight: bold;
       display: inline-block;
     }
-    .badge- уважительная { background: #e3f2fd; color: #0d47a1; }
-    .badge- наглый { background: #ffebee; color: #c62828; }
-    .badge- неорганизованный { background: #fff3e0; color: #ef6c00; }
+    .badge-уважительная { background: #e3f2fd; color: #0d47a1; }
+    .badge-наглый { background: #ffebee; color: #c62828; }
+    .badge-неорганизованный { background: #fff3e0; color: #ef6c00; }
+
+    .history-log {
+      max-height: 80px;
+      overflow-y: auto;
+      font-size: 0.75rem;
+      background: #f8f9fa;
+      padding: 5px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+    }
 
     /* Модальное окно */
     .modal {
@@ -110,6 +136,7 @@
       justify-content: center;
       align-items: center;
       padding: 15px;
+      z-index: 1000;
     }
     .modal.active { display: flex; }
     .modal-content {
@@ -117,13 +144,15 @@
       padding: 20px;
       border-radius: 12px;
       width: 100%;
-      max-width: 500px;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
     .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); }
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-    .btn-secondary { background: #ccc; color: #333; }
+    .action-btns { display: flex; gap: 5px; }
   </style>
 </head>
 <body>
@@ -132,51 +161,79 @@
   <div class="header">
     <div>
       <h1>Учет проблемных договоров</h1>
-      <p>Система контроля работы (Исламский росточек)</p>
+      <p>Контроль работы и соблюдения сроков (Исламский росточек)</p>
     </div>
     <button class="btn" id="openModalBtn">+ Добавить проблемный договор</button>
   </div>
 
+  <!-- 3 Вкладки (Листа) -->
   <div class="tabs">
-    <button class="tab-btn active" id="tabActive">Активные проблемные (<span id="countActive">0</span>)</button>
-    <button class="tab-btn" id="tabClosed">Закрытые / Урегулированные (<span id="countClosed">0</span>)</button>
+    <button class="tab-btn active" id="tabActive">Лист 1: Активные проблемные (<span id="countActive">0</span>)</button>
+    <button class="tab-btn" id="tabClosed">Лист 2: Закрытые / Архив (<span id="countClosed">0</span>)</button>
+    <button class="tab-btn" id="tabSettings">Лист 3: Справочники и Настройки</button>
   </div>
 
-  <div class="filters">
-    <input type="text" id="searchInput" class="input-field" placeholder="Поиск по ФИО или договору...">
+  <!-- Фильтры -->
+  <div class="filters" id="filtersBlock">
+    <input type="text" id="searchInput" class="input-field" placeholder="Поиск по ФИО, № договора или контактам...">
     <select id="filterType" class="select-field">
-      <option value="all">Все типы клиентов</option>
+      <option value="all">Все категории клиентов</option>
       <option value="уважительная">Затруднение (уважительная)</option>
       <option value="наглый">Уклоняется / Наглый</option>
       <option value="неорганизованный">Забыл / Неорганизованный</option>
     </select>
+    <select id="filterStatus" class="select-field">
+      <option value="all">Все этапы процесса</option>
+      <option value="В работе">В работе / Ожидание</option>
+      <option value="Обещал оплатить">Обещал оплатить</option>
+      <option value="Нарушил обещание">Нарушил обещание</option>
+      <option value="На стадии асул">На стадии примирения (асул)</option>
+    </select>
   </div>
 
-  <div class="table-container">
+  <!-- Таблица основного содержимого -->
+  <div class="table-container" id="mainTableBlock">
     <table>
       <thead>
         <tr>
           <th>№ / Договор</th>
           <th>Клиент & Контакты</th>
-          <th>Сумма долга</th>
-          <th>Тип клиента</th>
-          <th>Действие</th>
+          <th>Долг</th>
+          <th>Характер</th>
+          <th>Ответственный</th>
+          <th>Контроль (Дата)</th>
+          <th>Этап процесса</th>
+          <th>История / Комментарии</th>
+          <th>Действия</th>
         </tr>
       </thead>
-      <tbody id="contractsTableBody">
-        <!-- Данные подгружаются через JavaScript -->
-      </tbody>
+      <tbody id="contractsTableBody"></tbody>
     </table>
+  </div>
+
+  <!-- Лист 3: Справочник / Настройки -->
+  <div id="settingsBlock" style="display: none; background: white; padding: 20px; border-radius: 8px;">
+    <h3>Справочник настроек и рекомендаций</h3>
+    <br>
+    <p><strong>Этическое напоминание:</strong> Согласно Суре Аль-Бакара (аят 280), если клиент находится в стесненных обстоятельствах по уважительной причине, рекомендуется предоставить отсрочку.</p>
+    <br>
+    <h4>Категории клиентов:</h4>
+    <ul>
+      <li><b>Затруднение (уважительная)</b> — временные финансовые сложности.</li>
+      <li><b>Уклоняется / Наглый</b> — имеющий возможность платить, но затягивающий время.</li>
+      <li><b>Забыл / Неорганизованный</b> — требующий регулярного контроля и напоминаний.</li>
+    </ul>
   </div>
 </div>
 
-<!-- Модальное окно добавления -->
+<!-- Модальное окно добавления / редактирования -->
 <div class="modal" id="modal">
   <div class="modal-content">
-    <div class="modal-header">Новый проблемный договор</div>
+    <div class="modal-header" id="modalTitle">Новый проблемный договор</div>
     <form id="addContractForm">
+      <input type="hidden" id="editId">
       <div class="form-group">
-        <label>№ Договора</label>
+        <label>ID / № Договора</label>
         <input type="text" id="docNum" class="input-field" required>
       </div>
       <div class="form-group">
@@ -184,20 +241,41 @@
         <input type="text" id="clientName" class="input-field" required>
       </div>
       <div class="form-group">
-        <label>Телефон</label>
-        <input type="text" id="clientPhone" class="input-field" required>
+        <label>Контакты (Телефон, обязательно с кодом страны, например, +7...)</label>
+        <input type="text" id="clientPhone" class="input-field" placeholder="+79991234567" required>
       </div>
       <div class="form-group">
-        <label>Сумма долга (руб.)</label>
+        <label>Сумма задолженности / остаток (₽)</label>
         <input type="number" id="debtAmount" class="input-field" required>
       </div>
       <div class="form-group">
-        <label>Тип клиента</label>
+        <label>Характер клиента (Категория)</label>
         <select id="clientType" class="select-field">
-          <option value="уважительная">Затруднение (уважительная)</option>
+          <option value="уважительная">Затруднение (уважительная причина)</option>
           <option value="наглый">Уклоняется / Наглый</option>
           <option value="неорганизованный">Забыл / Неорганизованный</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>Ответственный сотрудник</label>
+        <input type="text" id="responsible" class="input-field" placeholder="Ваше имя или имя сотрудника" required>
+      </div>
+      <div class="form-group">
+        <label>Дата следующего напоминания / контроля</label>
+        <input type="date" id="controlDate" class="input-field" required>
+      </div>
+      <div class="form-group">
+        <label>Статус процесса (Текущий этап)</label>
+        <select id="processStatus" class="select-field">
+          <option value="В работе">В работе / Ожидание обещания</option>
+          <option value="Обещал оплатить">Обещал оплатить (ждём дату)</option>
+          <option value="Нарушил обещание">Нарушил обещание (требует звонка)</option>
+          <option value="На стадии асул">На стадии примирения / асул</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Суть договоренности / Комментарий (Добавит запись в историю):</label>
+        <textarea id="newComment" class="input-field" rows="3" placeholder="Например: [26.08 - Али]: Обещал отдать часть суммы 10-го числа."></textarea>
       </div>
       <div class="modal-actions">
         <button type="button" class="btn btn-secondary" id="closeModalBtn">Отмена</button>
@@ -208,75 +286,108 @@
 </div>
 
 <script>
-  // Локальная база данных (хранится в браузере)
-  let contracts = JSON.parse(localStorage.getItem('contracts')) || [
-    { id: 1, doc: 'Д-101', name: 'Иванов И.И.', phone: '+7 999 000-00-01', amount: 15000, type: 'уважительная', status: 'active' },
-    { id: 2, doc: 'Д-102', name: 'Петров П.П.', phone: '+7 999 000-00-02', amount: 45000, type: 'наглый', status: 'active' }
-  ];
-
+  let contracts = JSON.parse(localStorage.getItem('contracts_v3')) || [];
   let currentTab = 'active';
 
-  // Элементы DOM
   const tableBody = document.getElementById('contractsTableBody');
   const modal = document.getElementById('modal');
   const openModalBtn = document.getElementById('openModalBtn');
   const closeModalBtn = document.getElementById('closeModalBtn');
   const form = document.getElementById('addContractForm');
-  const tabActive = document.getElementById('tabActive');
-  const tabClosed = document.getElementById('tabClosed');
-  const searchInput = document.getElementById('searchInput');
-  const filterType = document.getElementById('filterType');
 
-  // Сохранение в LocalStorage
   function saveData() {
-    localStorage.setItem('contracts', JSON.stringify(contracts));
+    localStorage.setItem('contracts_v3', JSON.stringify(contracts));
     render();
   }
 
-  // Переключение статуса договора (Закрыть / Восстановить)
+  // Вспомогательная функция для очистки номера телефона для ссылки WhatsApp
+  function cleanPhoneNumber(phone) {
+    return phone.replace(/[^0-9]/g, '');
+  }
+
+  // Перенос в архив / восстановление
   window.toggleStatus = function(id) {
     contracts = contracts.map(item => {
       if (item.id === id) {
-        item.status = item.status === 'active' ? 'closed' : 'active';
+        item.archived = !item.archived;
       }
       return item;
     });
     saveData();
   };
 
+  // ПОЛНОЕ УДАЛЕНИЕ ДОГОВОРА
+  window.deleteContract = function(id) {
+    if (confirm('Вы уверены, что хотите полностью и безвозвратно удалить этот договор?')) {
+      contracts = contracts.filter(item => item.id !== id);
+      saveData();
+    }
+  };
+
   // Отрисовка таблицы
   function render() {
-    const search = searchInput.value.toLowerCase();
-    const typeFilter = filterType.value;
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('filterType').value;
+    const statusFilter = document.getElementById('filterStatus').value;
+
+    const todayStr = new Date().toISOString().split('T')[0];
 
     const filtered = contracts.filter(item => {
-      const matchesTab = item.status === currentTab;
-      const matchesSearch = item.name.toLowerCase().includes(search) || item.doc.toLowerCase().includes(search);
+      const isArchived = item.archived || false;
+      const matchesTab = currentTab === 'active' ? !isArchived : isArchived;
+      const matchesSearch = item.name.toLowerCase().includes(search) || 
+                            item.doc.toLowerCase().includes(search) || 
+                            item.phone.toLowerCase().includes(search);
       const matchesType = typeFilter === 'all' || item.type === typeFilter;
-      return matchesTab && matchesSearch && matchesType;
+      const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+
+      return matchesTab && matchesSearch && matchesType && matchesStatus;
     });
 
-    // Обновление счетчиков
-    document.getElementById('countActive').innerText = contracts.filter(c => c.status === 'active').length;
-    document.getElementById('countClosed').innerText = contracts.filter(c => c.status === 'closed').length;
+    document.getElementById('countActive').innerText = contracts.filter(c => !c.archived).length;
+    document.getElementById('countClosed').innerText = contracts.filter(c => c.archived).length;
 
     tableBody.innerHTML = '';
     if (filtered.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Записи не найдены</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999; padding:20px;">Записи не найдены</td></tr>';
       return;
     }
 
     filtered.forEach(item => {
       const tr = document.createElement('tr');
+      const cleanPhone = cleanPhoneNumber(item.phone); // Номер только из цифр для WhatsApp
+
+      // Условное форматирование по датам контроля
+      if (!item.archived) {
+        if (item.controlDate < todayStr) {
+          tr.classList.add('overdue'); // Красный просрочено
+        } else if (item.controlDate === todayStr) {
+          tr.classList.add('today');   // Желтый сегодня
+        }
+      }
+
       tr.innerHTML = `
         <td><strong>${item.doc}</strong></td>
-        <td>${item.name}<br><small style="color:var(--text-muted);">${item.phone}</small></td>
+        <td>
+          <b>${item.name}</b><br>
+          <small>${item.phone}</small><br>
+          <a href="https://wa.me/${cleanPhone}" target="_blank" class="btn-whatsapp">Написать в WA</a>
+        </td>
         <td><strong>${Number(item.amount).toLocaleString('ru-RU')} ₽</strong></td>
         <td><span class="badge badge-${item.type}">${item.type}</span></td>
+        <td>${item.responsible}</td>
+        <td><b>${item.controlDate}</b></td>
+        <td>${item.status}</td>
+        <td><div class="history-log">${item.history || 'Нет записей'}</div></td>
         <td>
-          <button class="btn" style="padding: 4px 8px; font-size:0.75rem;" onclick="toggleStatus(${item.id})">
-            ${item.status === 'active' ? 'Закрыть' : 'Восстановить'}
-          </button>
+          <div class="action-btns">
+            <button class="btn" style="padding:4px 8px; font-size:0.75rem;" onclick="toggleStatus(${item.id})">
+              ${item.archived ? 'Восстановить' : 'Закрыть'}
+            </button>
+            <button class="btn btn-danger" style="padding:4px 8px; font-size:0.75rem;" onclick="deleteContract(${item.id})">
+              Удалить
+            </button>
+          </div>
         </td>
       `;
       tableBody.appendChild(tr);
@@ -284,12 +395,29 @@
   }
 
   // Управление модальным окном
-  openModalBtn.onclick = () => modal.classList.add('active');
+  openModalBtn.onclick = () => {
+    form.reset();
+    document.getElementById('editId').value = '';
+    document.getElementById('modalTitle').innerText = 'Новый проблемный договор';
+    modal.classList.add('active');
+  };
+
   closeModalBtn.onclick = () => modal.classList.remove('active');
 
-  // Добавление договора
+  // Добавление / Редактирование
   form.onsubmit = (e) => {
     e.preventDefault();
+    const comment = document.getElementById('newComment').value;
+    const author = document.getElementById('responsible').value;
+    
+    // Получаем текущую дату в формате ДД.ММ (например, 26.08)
+    const dateNow = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
+    
+    let formattedComment = '';
+    if (comment.trim() !== '') {
+      formattedComment = `[${dateNow} - ${author}]: ${comment}\n`;
+    }
+
     const newContract = {
       id: Date.now(),
       doc: document.getElementById('docNum').value,
@@ -297,34 +425,51 @@
       phone: document.getElementById('clientPhone').value,
       amount: document.getElementById('debtAmount').value,
       type: document.getElementById('clientType').value,
-      status: 'active'
+      responsible: author,
+      controlDate: document.getElementById('controlDate').value,
+      status: document.getElementById('processStatus').value,
+      history: formattedComment,
+      archived: false
     };
+
     contracts.push(newContract);
     saveData();
     form.reset();
     modal.classList.remove('active');
   };
 
-  // Переключение табов
-  tabActive.onclick = () => {
-    tabActive.classList.add('active');
-    tabClosed.classList.remove('active');
-    currentTab = 'active';
-    render();
+  // Переключение Листов (Табов)
+  document.getElementById('tabActive').onclick = function() {
+    setActiveTab(this, 'active');
+  };
+  document.getElementById('tabClosed').onclick = function() {
+    setActiveTab(this, 'closed');
+  };
+  document.getElementById('tabSettings').onclick = function() {
+    setActiveTab(this, 'settings');
   };
 
-  tabClosed.onclick = () => {
-    tabClosed.classList.add('active');
-    tabActive.classList.remove('active');
-    currentTab = 'closed';
-    render();
-  };
+  function setActiveTab(element, tab) {
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    element.classList.add('active');
+    currentTab = tab;
 
-  // События поиска и фильтрации
-  searchInput.oninput = render;
-  filterType.onchange = render;
+    if (tab === 'settings') {
+      document.getElementById('mainTableBlock').style.display = 'none';
+      document.getElementById('filtersBlock').style.display = 'none';
+      document.getElementById('settingsBlock').style.display = 'block';
+    } else {
+      document.getElementById('mainTableBlock').style.display = 'block';
+      document.getElementById('filtersBlock').style.display = 'grid';
+      document.getElementById('settingsBlock').style.display = 'none';
+      render();
+    }
+  }
 
-  // Инициализация
+  document.getElementById('searchInput').oninput = render;
+  document.getElementById('filterType').onchange = render;
+  document.getElementById('filterStatus').onchange = render;
+
   render();
 </script>
 
