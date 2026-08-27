@@ -84,6 +84,17 @@
       margin-top: 4px;
       font-weight: bold;
     }
+    .btn-map {
+      background: #0284c7;
+      color: white;
+      padding: 3px 6px;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      text-decoration: none;
+      display: inline-block;
+      margin-top: 4px;
+      font-weight: bold;
+    }
 
     .tabs { display: flex; gap: 10px; margin-bottom: 15px; }
     .tab-btn {
@@ -149,7 +160,7 @@
       z-index: 1000;
     }
     .modal.active { display: flex; }
-    .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; }
+    .modal-content { background: white; padding: 20px; border-radius: 12px; width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; }
     .modal-header { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; }
     .form-group { margin-bottom: 12px; }
     .form-group label { display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-muted); }
@@ -176,16 +187,16 @@
       <div class="val" id="sumTotal">0 ₽</div>
     </div>
     <div class="dash-card danger-border">
+      <h4>Просрочка на сегодня</h4>
+      <div class="val" id="sumCurrentOverdue" style="color:var(--danger);">0 ₽</div>
+    </div>
+    <div class="dash-card danger-border">
       <h4>Остаток к получению</h4>
       <div class="val" id="sumRemaining" style="color:var(--danger);">0 ₽</div>
     </div>
     <div class="dash-card">
       <h4>Взыскано</h4>
       <div class="val" id="sumPaid" style="color:var(--accent);">0 ₽</div>
-    </div>
-    <div class="dash-card danger-border">
-      <h4>Просрочено звонков</h4>
-      <div class="val" id="countOverdue" style="color:var(--danger);">0</div>
     </div>
   </div>
 
@@ -228,6 +239,7 @@
           <th>№ / Договор</th>
           <th>Клиент & Контакты</th>
           <th>Задолженность</th>
+          <th>Адрес</th>
           <th>Характер</th>
           <th>Ответственный</th>
           <th>Контроль</th>
@@ -259,9 +271,20 @@
         </div>
       </div>
 
+      <div class="form-row">
+        <div class="form-group">
+          <label>Основной телефон (+79991234567)</label>
+          <input type="text" id="clientPhone" class="input-field" placeholder="+79991234567" required>
+        </div>
+        <div class="form-group">
+          <label>Доп. контакт (Имя: +7999...)</label>
+          <input type="text" id="extraContact" class="input-field" placeholder="Брат: +79991234567">
+        </div>
+      </div>
+
       <div class="form-group">
-        <label>Телефон (+79991234567)</label>
-        <input type="text" id="clientPhone" class="input-field" placeholder="+79991234567" required>
+        <label>Адрес проживания / Местоположение</label>
+        <input type="text" id="clientAddress" class="input-field" placeholder="г. Москва, ул. Ленина 10, кв 5">
       </div>
 
       <div class="form-row">
@@ -270,8 +293,19 @@
           <input type="number" id="totalAmount" class="input-field" required>
         </div>
         <div class="form-group">
-          <label>Остаток долга (₽)</label>
-          <input type="number" id="remainingAmount" class="input-field" required>
+          <label>Оплаченная сумма (₽)</label>
+          <input type="number" id="paidAmount" class="input-field" value="0" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Дата заключения договора</label>
+          <input type="date" id="contractDate" class="input-field" required>
+        </div>
+        <div class="form-group">
+          <label>Срок рассрочки (месяцев)</label>
+          <input type="number" id="monthsCount" class="input-field" min="1" value="12" required>
         </div>
       </div>
 
@@ -324,7 +358,6 @@
   </div>
 </div>
 
-<!-- Подключение Firebase SDK c вашими ключами -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -352,7 +385,6 @@
   const modal = document.getElementById('modal');
   const statusEl = document.getElementById('cloudStatus');
 
-  // Отслеживание данных в реальном времени
   onValue(contractsRef, (snapshot) => {
     const data = snapshot.val();
     contracts = data ? Object.values(data) : [];
@@ -368,23 +400,53 @@
     set(ref(db, 'contracts/' + contract.id), contract);
   }
 
+  // Расчет просрочки на текущую дату по графику
+  function calculateCurrentOverdue(item) {
+    const total = Number(item.totalAmount || 0);
+    const paid = Number(item.paidAmount || 0);
+    const months = Number(item.monthsCount || 1);
+    
+    if (!item.contractDate || months <= 0) {
+      return Math.max(0, total - paid);
+    }
+
+    const startDate = new Date(item.contractDate);
+    const now = new Date();
+    
+    // Считаем пройденное количество месяцев
+    let elapsedMonths = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+    if (now.getDate() >= startDate.getDate()) {
+      elapsedMonths += 1;
+    }
+
+    elapsedMonths = Math.max(0, Math.min(months, elapsedMonths));
+
+    const monthlyPayment = total / months;
+    const expectedPaid = monthlyPayment * elapsedMonths;
+    const overdue = expectedPaid - paid;
+
+    return Math.max(0, Math.round(overdue));
+  }
+
   window.addPayment = function(id) {
     const item = contracts.find(c => c.id === id);
     if (!item) return;
 
-    const payInput = prompt(`Внесите сумму оплаты для ${item.name}\n(Текущий остаток: ${Number(item.remainingAmount).toLocaleString('ru-RU')} ₽):`);
+    const remaining = Number(item.totalAmount || 0) - Number(item.paidAmount || 0);
+    const payInput = prompt(`Внесите сумму оплаты для ${item.name}\n(Текущий остаток долга: ${remaining.toLocaleString('ru-RU')} ₽):`);
     if (!payInput) return;
 
     const paySum = parseFloat(payInput);
     if (isNaN(paySum) || paySum <= 0) return;
 
-    const newRem = Math.max(0, item.remainingAmount - paySum);
+    const newPaid = Number(item.paidAmount || 0) + paySum;
+    const newRem = Math.max(0, Number(item.totalAmount || 0) - newPaid);
     const author = item.responsible || 'Сотрудник';
     const dateNow = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
     
-    const note = `[${dateNow} - ${author}]: Внесено ${paySum.toLocaleString('ru-RU')} ₽. Остаток: ${newRem.toLocaleString('ru-RU')} ₽.`;
+    const note = `[${dateNow} - ${author}]: Внесено ${paySum.toLocaleString('ru-RU')} ₽. Остаток долга: ${newRem.toLocaleString('ru-RU')} ₽.`;
     
-    item.remainingAmount = newRem;
+    item.paidAmount = newPaid;
     item.history = (item.history ? item.history + '\n' : '') + note;
 
     if (newRem === 0) item.status = 'Оплачен';
@@ -416,8 +478,12 @@
     document.getElementById('docNum').value = item.doc;
     document.getElementById('clientName').value = item.name;
     document.getElementById('clientPhone').value = item.phone;
+    document.getElementById('extraContact').value = item.extraContact || '';
+    document.getElementById('clientAddress').value = item.address || '';
     document.getElementById('totalAmount').value = item.totalAmount || 0;
-    document.getElementById('remainingAmount').value = item.remainingAmount || 0;
+    document.getElementById('paidAmount').value = item.paidAmount || 0;
+    document.getElementById('contractDate').value = item.contractDate || '';
+    document.getElementById('monthsCount').value = item.monthsCount || 12;
     document.getElementById('clientType').value = item.type;
     document.getElementById('responsible').value = item.responsible;
     document.getElementById('controlDate').value = item.controlDate;
@@ -430,19 +496,22 @@
   };
 
   function updateDashboard() {
-    let tot = 0, rem = 0, overdue = 0;
-    const todayStr = new Date().toISOString().split('T')[0];
+    let tot = 0, paid = 0, overdueSum = 0;
 
     contracts.filter(c => !c.archived).forEach(c => {
-      tot += Number(c.totalAmount || 0);
-      rem += Number(c.remainingAmount || 0);
-      if (c.controlDate < todayStr) overdue++;
+      const cTotal = Number(c.totalAmount || 0);
+      const cPaid = Number(c.paidAmount || 0);
+      tot += cTotal;
+      paid += cPaid;
+      overdueSum += calculateCurrentOverdue(c);
     });
 
+    const rem = tot - paid;
+
     document.getElementById('sumTotal').innerText = tot.toLocaleString('ru-RU') + ' ₽';
+    document.getElementById('sumCurrentOverdue').innerText = overdueSum.toLocaleString('ru-RU') + ' ₽';
     document.getElementById('sumRemaining').innerText = rem.toLocaleString('ru-RU') + ' ₽';
-    document.getElementById('sumPaid').innerText = (tot - rem).toLocaleString('ru-RU') + ' ₽';
-    document.getElementById('countOverdue').innerText = overdue;
+    document.getElementById('sumPaid').innerText = paid.toLocaleString('ru-RU') + ' ₽';
   }
 
   function render() {
@@ -459,7 +528,8 @@
       const matchesTab = currentTab === 'active' ? !isArchived : isArchived;
       const matchesSearch = item.name.toLowerCase().includes(search) || 
                             item.doc.toLowerCase().includes(search) || 
-                            item.phone.toLowerCase().includes(search);
+                            item.phone.toLowerCase().includes(search) ||
+                            (item.address && item.address.toLowerCase().includes(search));
       const matchesType = typeFilter === 'all' || item.type === typeFilter;
       const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
       const matchesCallToday = !onlyCallsToday || (!isArchived && item.controlDate <= todayStr);
@@ -468,8 +538,11 @@
     });
 
     filtered.sort((a, b) => {
+      const remA = Number(a.totalAmount || 0) - Number(a.paidAmount || 0);
+      const remB = Number(b.totalAmount || 0) - Number(b.paidAmount || 0);
+      
       if (sortBy === 'controlAsc') return a.controlDate.localeCompare(b.controlDate);
-      if (sortBy === 'remDesc') return (b.remainingAmount || 0) - (a.remainingAmount || 0);
+      if (sortBy === 'remDesc') return remB - remA;
       if (sortBy === 'docAsc') return a.doc.localeCompare(b.doc);
       return 0;
     });
@@ -479,30 +552,58 @@
 
     tableBody.innerHTML = '';
     if (filtered.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#999; padding:20px;">Нет данных</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:#999; padding:20px;">Нет данных</td></tr>';
       return;
     }
 
     filtered.forEach(item => {
       const tr = document.createElement('tr');
       const cleanPhone = item.phone.replace(/[^0-9]/g, '');
-      const total = Number(item.totalAmount || 0).toLocaleString('ru-RU');
-      const remaining = Number(item.remainingAmount || 0).toLocaleString('ru-RU');
+      const total = Number(item.totalAmount || 0);
+      const paid = Number(item.paidAmount || 0);
+      const remaining = total - paid;
+      const curOverdue = calculateCurrentOverdue(item);
 
       if (!item.archived) {
         if (item.controlDate < todayStr) tr.classList.add('overdue');
         else if (item.controlDate === todayStr) tr.classList.add('today');
       }
 
-      const waMessage = encodeURIComponent(`Здравствуйте, ${item.name}! Напоминаем по договору №${item.doc}. Остаток: ${remaining} ₽.`);
+      // Прямая ссылка api.whatsapp.com для принудительного открытия мобильного приложения WhatsApp
+      const waMessage = encodeURIComponent(`Здравствуйте, ${item.name}! Напоминаем по договору №${item.doc}. Остаток: ${remaining.toLocaleString('ru-RU')} ₽.`);
+      const waMainLink = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${waMessage}`;
+
+      let extraContactHtml = '';
+      if (item.extraContact) {
+        const extraPhoneMatch = item.extraContact.match(/\+?[0-9]{10,15}/);
+        if (extraPhoneMatch) {
+          const cleanExtra = extraPhoneMatch[0].replace(/[^0-9]/g, '');
+          const extraWa = `https://api.whatsapp.com/send?phone=${cleanExtra}`;
+          extraContactHtml = `<br><small style="color:var(--text-muted);">${item.extraContact}</small> <a href="${extraWa}" target="_blank" class="btn-whatsapp" style="font-size:0.65rem; padding:2px 5px;">WA</a>`;
+        } else {
+          extraContactHtml = `<br><small style="color:var(--text-muted);">${item.extraContact}</small>`;
+        }
+      }
+
+      let addressHtml = '<span style="color:#aaa;">—</span>';
+      if (item.address) {
+        const mapUrl = `https://yandex.ru/maps/?text=${encodeURIComponent(item.address)}`;
+        addressHtml = `<small>${item.address}</small><br><a href="${mapUrl}" target="_blank" class="btn-map">🗺️ Карта</a>`;
+      }
 
       tr.innerHTML = `
         <td><strong>${item.doc}</strong></td>
         <td>
           <b>${item.name}</b><br><small>${item.phone}</small><br>
-          <a href="https://wa.me/${cleanPhone}?text=${waMessage}" target="_blank" class="btn-whatsapp">WhatsApp</a>
+          <a href="${waMainLink}" target="_blank" class="btn-whatsapp">WhatsApp</a>
+          ${extraContactHtml}
         </td>
-        <td><span style="color:var(--danger); font-weight:bold;">Остаток: ${remaining} ₽</span><br><small style="color:var(--text-muted);">Всего: ${total} ₽</small></td>
+        <td>
+          <span style="color:var(--danger); font-weight:bold;">Просрочка: ${curOverdue.toLocaleString('ru-RU')} ₽</span><br>
+          <small style="color:var(--text-muted);">Остаток: ${remaining.toLocaleString('ru-RU')} ₽</small><br>
+          <small style="color:var(--text-muted);">Всего: ${total.toLocaleString('ru-RU')} ₽</small>
+        </td>
+        <td>${addressHtml}</td>
         <td><span class="badge badge-${item.type}">${item.type}</span></td>
         <td>${item.responsible}</td>
         <td><b>${item.controlDate}</b></td>
@@ -531,6 +632,7 @@
   document.getElementById('openModalBtn').onclick = () => {
     document.getElementById('addContractForm').reset();
     document.getElementById('editId').value = '';
+    document.getElementById('contractDate').value = new Date().toISOString().split('T')[0];
     document.getElementById('modalTitle').innerText = 'Новый договор';
     modal.classList.add('active');
   };
@@ -556,8 +658,12 @@
       doc: document.getElementById('docNum').value,
       name: document.getElementById('clientName').value,
       phone: document.getElementById('clientPhone').value,
+      extraContact: document.getElementById('extraContact').value,
+      address: document.getElementById('clientAddress').value,
       totalAmount: Number(document.getElementById('totalAmount').value),
-      remainingAmount: Number(document.getElementById('remainingAmount').value),
+      paidAmount: Number(document.getElementById('paidAmount').value),
+      contractDate: document.getElementById('contractDate').value,
+      monthsCount: Number(document.getElementById('monthsCount').value),
       type: document.getElementById('clientType').value,
       responsible: author,
       controlDate: document.getElementById('controlDate').value,
